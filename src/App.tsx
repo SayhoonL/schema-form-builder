@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./styles.css";
 
-/* -------------------- DnD imports -------------------- */
+/* DnD */
 import {
   DndContext,
   closestCenter,
@@ -12,84 +12,48 @@ import {
 
 import {
   SortableContext,
-  useSortable,
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
 
-import { CSS } from "@dnd-kit/utilities";
+/* Components */
+import SortableFieldItem from "./components/SortableFieldItem";
+import FormPreview from "./components/FormPreview";
 
-/* -------------------- Types -------------------- */
+/* Types */
+type FieldType = "text" | "email" | "number";
+
 type Field = {
   id: string;
+  type: FieldType;
   label: string;
   placeholder: string;
   required: boolean;
 };
 
-/* -------------------- Sortable Sidebar Item -------------------- */
-function SortableFieldItem({
-  id,
-  label,
-  selected,
-  onClick,
-}: {
-  id: string;
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={
-        "field-item" + (selected ? " selected" : "")
-      }
-      onClick={onClick}
-    >
-      <strong>{label || "New Field"}</strong>
-    </div>
-  );
-}
-
-/* -------------------- App -------------------- */
 function App() {
-  /* Mode */
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
-  /* Schema */
   const [fields, setFields] = useState<Field[]>([
     {
       id: crypto.randomUUID(),
+      type: "text",
       label: "Full Name",
       placeholder: "Enter your full name",
       required: true,
     },
   ]);
 
-  /* Selection */
   const [selectedId, setSelectedId] = useState<string | null>(
     fields[0].id
   );
 
-  /* Published schema (confirmation view) */
   const [publishedForm, setPublishedForm] =
     useState<any | null>(null);
 
   const selectedField = fields.find((f) => f.id === selectedId);
 
-  /* -------------------- DnD setup -------------------- */
+  /* DnD setup */
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
@@ -98,7 +62,6 @@ function App() {
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
-
     if (!over || active.id === over.id) return;
 
     setFields((items) => {
@@ -112,11 +75,11 @@ function App() {
     });
   };
 
-  /* -------------------- Handlers -------------------- */
-
-  const addTextField = () => {
+  /* Handlers */
+  const addField = () => {
     const newField: Field = {
       id: crypto.randomUUID(),
+      type: "text",
       label: "",
       placeholder: "",
       required: false,
@@ -125,7 +88,10 @@ function App() {
     setSelectedId(newField.id);
   };
 
-  const updateField = (key: keyof Field, value: any) => {
+  const updateField = (
+    key: keyof Field,
+    value: any
+  ) => {
     setFields((prev) =>
       prev.map((f) =>
         f.id === selectedId ? { ...f, [key]: value } : f
@@ -133,20 +99,35 @@ function App() {
     );
   };
 
-  const handlePublish = () => {
-    const schema = {
-      formName: "My Form",
-      questions: fields.map((field) => ({
-        label: field.label || "Untitled Field",
-        placeholder: field.placeholder,
-        required: field.required,
-      })),
-    };
+  const deleteField = () => {
+    if (!selectedId || fields.length === 1) return;
 
-    setPublishedForm(schema);
+    const index = fields.findIndex(
+      (f) => f.id === selectedId
+    );
+
+    const updated = fields.filter(
+      (f) => f.id !== selectedId
+    );
+
+    setFields(updated);
+    setSelectedId(
+      updated[Math.max(index - 1, 0)].id
+    );
   };
 
-  /* -------------------- UI -------------------- */
+  const handlePublish = () => {
+    if (fields.some((f) => !f.label.trim())) {
+      alert("All fields must have a label.");
+      return;
+    }
+
+    setPublishedForm({
+      formName: "My Form",
+      questions: fields,
+    });
+  };
+
   return (
     <div className="app">
       {/* Header */}
@@ -193,38 +174,57 @@ function App() {
                   key={field.id}
                   id={field.id}
                   label={field.label}
+                  type={field.type}
                   selected={field.id === selectedId}
-                  onClick={() => setSelectedId(field.id)}
+                  onClick={() =>
+                    setSelectedId(field.id)
+                  }
                 />
               ))}
             </SortableContext>
           </DndContext>
 
           <div className="add-section">
-            <h4>Add Field</h4>
-            <button onClick={addTextField}>+ Text</button>
+            <button onClick={addField}>
+              + Add Field
+            </button>
           </div>
         </aside>
 
-        {/* Main Panel */}
+        {/* Main */}
         <main className="main">
-          {/* EDIT MODE */}
           {mode === "edit" && selectedField && (
             <div className="card">
               <h2>Field Configuration</h2>
 
+              <label>Field Type</label>
+              <select
+                value={selectedField.type}
+                onChange={(e) =>
+                  updateField(
+                    "type",
+                    e.target.value
+                  )
+                }
+              >
+                <option value="text">Text</option>
+                <option value="email">Email</option>
+                <option value="number">Number</option>
+              </select>
+
               <label>Label</label>
               <input
-                placeholder="New Field"
                 value={selectedField.label}
                 onChange={(e) =>
-                  updateField("label", e.target.value)
+                  updateField(
+                    "label",
+                    e.target.value
+                  )
                 }
               />
 
               <label>Placeholder</label>
               <input
-                placeholder="Placeholder text"
                 value={selectedField.placeholder}
                 onChange={(e) =>
                   updateField(
@@ -235,69 +235,44 @@ function App() {
               />
 
               <div className="toggle-row">
-                <span>Required Field</span>
+                <span>Required</span>
                 <input
                   type="checkbox"
                   checked={selectedField.required}
                   onChange={(e) =>
-                    updateField("required", e.target.checked)
+                    updateField(
+                      "required",
+                      e.target.checked
+                    )
                   }
                 />
               </div>
+
+              <button
+                className="submit-btn"
+                style={{ background: "#ef4444" }}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Delete this field?"
+                    )
+                  ) {
+                    deleteField();
+                  }
+                }}
+              >
+                Delete Field
+              </button>
             </div>
           )}
 
-          {/* PREVIEW MODE */}
           {mode === "preview" && (
             <div className="card">
-              {!publishedForm ? (
-                <>
-                  <h2>Preview</h2>
-
-                  {fields.map((field) => (
-                    <div
-                      key={field.id}
-                      className="preview-field"
-                    >
-                      <label>
-                        {field.label || "Untitled Field"}
-                        {field.required && " *"}
-                      </label>
-                      <input
-                        placeholder={field.placeholder}
-                        disabled
-                      />
-                    </div>
-                  ))}
-
-                  <button
-                    className="submit-btn"
-                    onClick={handlePublish}
-                  >
-                    Publish Form
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h2> Form Published</h2>
-                  <p>This is the published form schema:</p>
-
-                  <pre
-                    style={{
-                      background: "#f3f4f6",
-                      padding: "12px",
-                      borderRadius: "6px",
-                      marginTop: "12px",
-                    }}
-                  >
-                    {JSON.stringify(
-                      publishedForm,
-                      null,
-                      2
-                    )}
-                  </pre>
-                </>
-              )}
+              <FormPreview
+                fields={fields}
+                onPublish={handlePublish}
+                publishedForm={publishedForm}
+              />
             </div>
           )}
         </main>
