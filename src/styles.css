@@ -92,10 +92,18 @@ body {
 .main {
   flex: 1;
   padding: 32px;
+
+  /* NEW: center the card horizontally */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .card {
+  /* NEW: let it center nicely and be responsive */
+  width: 100%;
   max-width: 560px;
+
   background: white;
   border-radius: 8px;
   padding: 24px;

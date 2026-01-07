@@ -1,43 +1,61 @@
-import type { Field } from "../types/form";
+import type { Field, FieldType } from "../types/form";
 
-type Props = {
+interface Props {
   field: Field;
-  onUpdate: (field: Field) => void;
-};
+  updateField: (key: keyof Field, value: any) => void;
+  deleteField: () => void;
+}
 
-function FieldEditor({ field, onUpdate }: Props) {
+export default function FieldEditor({ field, updateField, deleteField }: Props) {
   return (
-    <div style={{ border: "1px solid #ccc", padding: 16 }}>
-      <h3>Edit Field</h3>
+    <div className="card">
+      <h2>Field Configuration</h2>
 
-      <div style={{ marginBottom: 12 }}>
-        <label>
-          Label:
-          <br />
-          <input
-            type="text"
-            value={field.label}
-            onChange={(e) =>
-              onUpdate({ ...field, label: e.target.value })
-            }
-          />
-        </label>
+      {/* Field Type */}
+      <label>Field Type</label>
+      <select
+        value={field.type}
+        onChange={(e) => updateField("type", e.target.value as FieldType)}
+      >
+        <option value="text">Text</option>
+        <option value="email">Email</option>
+        <option value="number">Number</option>
+      </select>
+
+      {/* Label */}
+      <label>Label</label>
+      <input
+        value={field.label}
+        onChange={(e) => updateField("label", e.target.value)}
+      />
+
+      {/* Placeholder */}
+      <label>Placeholder</label>
+      <input
+        value={field.placeholder}
+        onChange={(e) => updateField("placeholder", e.target.value)}
+      />
+
+      {/* Required */}
+      <div className="toggle-row">
+        <span>Required</span>
+        <input
+          type="checkbox"
+          checked={field.required}
+          onChange={(e) => updateField("required", e.target.checked)}
+        />
       </div>
 
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={field.required}
-            onChange={(e) =>
-              onUpdate({ ...field, required: e.target.checked })
-            }
-          />
-          Required
-        </label>
-      </div>
+      {/* Delete */}
+      <button
+        className="submit-btn"
+        style={{ background: "#ef4444", marginTop: "16px" }}
+        onClick={() => {
+          if (window.confirm("Delete this field?")) deleteField();
+        }}
+      >
+        Delete Field
+      </button>
     </div>
   );
 }
-
-export default FieldEditor;

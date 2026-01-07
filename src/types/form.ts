@@ -1,12 +1,9 @@
-export type FieldType = "text" | "email" | "select" | "checkbox";
+export type FieldType = "text" | "email" | "number";
 
 export type Field = {
   id: string;
-  type: "text";
+  type: FieldType;
   label: string;
+  placeholder: string;
   required: boolean;
 };
-
-export interface FormSchema {
-  fields: Field[];
-}

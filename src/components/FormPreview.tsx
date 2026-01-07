@@ -1,54 +1,21 @@
-type Field = {
-  id: string;
-  type: "text" | "email" | "number";
-  label: string;
-  placeholder: string;
-  required: boolean;
-};
+import type { Field } from "../types/form";
 
 type Props = {
   fields: Field[];
-  onPublish: () => void;
-  publishedForm: any | null;
 };
 
-function FormPreview({
-  fields,
-  onPublish,
-  publishedForm,
-}: Props) {
-  if (publishedForm) {
-    return (
-      <pre>
-        {JSON.stringify(publishedForm, null, 2)}
-      </pre>
-    );
-  }
-
+export default function FormPreview({ fields }: Props) {
   return (
     <>
-      <h2>Preview</h2>
-
-      {fields.map((field) => (
-        <div key={field.id} className="preview-field">
+      {fields.map((f) => (
+        <div key={f.id} className="preview-field">
           <label>
-            {field.label || "Untitled Field"}
-            {field.required && " *"}
+            {f.label}
+            {f.required && "*"}
           </label>
-          <input
-            type={field.type}
-            placeholder={field.placeholder}
-            required={field.required}
-            disabled
-          />
+          <input placeholder={f.placeholder} />
         </div>
       ))}
-
-      <button className="submit-btn" onClick={onPublish}>
-        Publish Form
-      </button>
     </>
   );
 }
-
-export default FormPreview;
